@@ -8,21 +8,61 @@ from selenium.common.exceptions import TimeoutException
 import time
 import re
 import signal
+import xlrd
+
+class Node:
 
 class searchCalculateBS:
+    '''
+    def __init__(self,ticker,marketCap):
+        print("Ticker: ",ticker)
+        self.marketCap = self.findMarketCap(marketCap)
+        print("Market Cap: ",self.marketCap)
+        if self.marketCap is not None:
 
-    #TODO: Connect to excel, ask which indecies it should run?
-    def __init__(self):
-        print("What is the ticker?: ")
-        tmpStr = sys.stdin.readline()
-        self.ticker=""
-        for char in tmpStr:
-            if char.isalpha():
-                self.ticker+=char
-        #tmpStr removes the extra line from the input.
-        path_to_chromedriver = '/Users/benprocknow/Downloads/chromedriver'
-        self.browser = webdriver.Chrome(executable_path=path_to_chromedriver)
-        self.balanceSheet = self.getBalanceSheet()
+            print("What is the ticker?: ")
+            tmpStr = sys.stdin.readline()
+            self.ticker=""
+            for char in tmpStr:
+                if char.isalpha():
+                    self.ticker+=char
+            #tmpStr removes the extra line from the input.
+            path_to_chromedriver = '/Users/benprocknow/Downloads/chromedriver'
+            self.browser = webdriver.Chrome(executable_path=path_to_chromedriver)
+            self.balanceSheet = self.getBalanceSheet()
+            '''
+        
+
+    def findMarketCap(self, marketCap):
+        marketCapStr=''
+        multiplierFactor=0
+        indexOfPeriod=0
+        i=0
+        #Get list of the digits in the marketCap & set multiplierFactor
+        while(i<len(marketCap)):
+            if (marketCap[i]=='n'):
+                return None
+            if (marketCap[i]=='M'):
+                multiplierFactor=1000000
+            if (marketCap[i]=='B'):
+                multiplierFactor=1000000000
+            if (marketCap[i]=='T'):
+                multiplierFactor=1000000000000
+            if (marketCap[i]=='.'):
+                indexOfPeriod=i-1
+            #Remove everything but numbers
+            try:
+                int(marketCap[i])
+                marketCapStr+=marketCap[i]
+            except ValueError:
+                pass
+            i+=1
+        try:
+            marketCap=int(marketCapStr)
+        except ValueError:
+            pass
+        return marketCap*multiplierFactor/(10**(len(marketCapStr)-indexOfPeriod))
+
 
     def getBalanceSheet(self):
         URL = "https://www.nasdaq.com/symbol/"+ self.ticker+ '/financials?query=balance-sheet'
@@ -111,7 +151,7 @@ class searchCalculateBS:
         bookValueLastYear = totalAssets-goodwill-intangible-liability
         return bookValueLastYear
 
-    #Takes into account 0.33*Inventory
+    #Takes into account 0.5*Inventory
     def computeCurrentAssetsOverFourYears(self):
         netCurrentAssetsList = self.balanceSheet[5]
         netCurrentAssets = self.getIntFromList(4, netCurrentAssetsList)/4
@@ -134,9 +174,9 @@ class searchCalculateBS:
 
     def computeCashAssetsFourYears(self):
         cashList = self.balanceSheet[0]
-        cash = self.getIntFromList(cashList)
+        cash = self.getIntFromList(1,cashList)
         shortTermList = self.balanceSheet[1]
-        shortTerm = self.getIntFromList(shortTermList)
+        shortTerm = self.getIntFromList(1, shortTermList)
         liabilityList = self.balanceSheet[22]
         liability = self.getIntFromList(1, liabilityList)
         cashAssetsFourYears = cash+shortTerm-liability
@@ -165,10 +205,37 @@ class searchCalculateBS:
     def quitBrowser(self):
         self.browser.quit()
 
+'''
+Inputs excel sheet with ticker in zero row and market cap in third row
+This sheet must be on sheet index 0
+Inputs number of rows that should be scanned on the excel.  Input of 'all'
+means that all the rows should be checked
+Returns a list of the balance sheets of all the tickers
+'''
+def computeValueForTickers(excelSpreadsheetName, numberOfRowsCompared):
+    listOfBalanceSheet=[]
+    nasdaqExcel = xlrd.open_workbook("./Feb2019Nasdaq.xls")
+    nasdaqSheet = nasdaqExcel.sheet_by_index(0)
+    i=0
+    while (i<numberOfRowsCompared+1):
+        ticker = nasdaqSheet.row_values(i)[0]
+        marketCap = nasdaqSheet.row_values(i)[3]
+         = searchCalculateBS(ticker, marketCap)
+        i+=1
+
+
 #TODO:  Connect to excel here, add searchCalculateBS.computeFromBalanceSheet to
 #AVL tree/ max heap.  When done can grab whatever top results are desirable.
 def main():
-    WantToConnectExcelHere = searchCalculateBS()
+    #Name of the excel with ticker of stocks in row 0 & market Cap in row 3
+    excelName = "./Feb2019Nasdaq.xls"
+    #COUNT FOR HOW MANY ROWS YOU WANT TO CHECK HERE 'all' means search all rows.
+    numberOfRowsCompared=5
+
+    listOfBalanceSheet = computeValueForTickers(excelName, numberOfRowsCompared)
+
+
+    '''
     print("Book Value Ave 4 years: ",WantToConnectExcelHere.computeBookValueLastFourYears())
     print("Book Value for Last Year: ",WantToConnectExcelHere.computeBookValueThisYear())
     print("Current Assets Ave 4 years: ",WantToConnectExcelHere.computeCurrentAssetsOverFourYears())
@@ -177,7 +244,7 @@ def main():
     print("Current Assets to Current Liabilities Last Four Years: ", WantToConnectExcelHere.currentAssetsToCurrentLiabilitiesFourYears())
     print("Current Assets to Current Liabilities Last Year: ", WantToConnectExcelHere.currentAssetsToCurrentLiabilitiesLastYear())
     WantToConnectExcelHere.quitBrowser()
-
+    '''
 
 if __name__ == "__main__":
     main()
