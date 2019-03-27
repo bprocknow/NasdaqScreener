@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "nasdaqvaluefinder",
+  "private_key_id": "583e456c77945c028835fe833a2246fa57649dcb",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDELcJbBM8UGkYO\nJdS36O8DCPN8gzD6KuUy5qq1uvfjiO1nEvt5eE/78/MpezM424lJ9gxTieVFLzLb\nNh+eJvj1XZSX9yEdj0P0R8kpCd6zbtnIkoq2Hdu9BtLRaQZfozQZC6CaCNWLSzmO\nIuK0q+KIKQQFn9rhM/onA7Kd6hUS8fC60XKnuKIbYyJjfDjKvKpUHq37brt+zdH1\noac5cFl2rzizMZLWjLu91u1GDJbUtYNZn4Q89FObXjAWuB7T8YzmxMKYsMwyI9S9\nu55Vm5RXwvr1nlNg+Yq4ZXapDdBGvdZuW43wW+OywpF951G4pdntNNTNu+oIzzLh\ndmkaGA55AgMBAAECggEAFNeiuj5SzNk0v6yLwsVD3W/uRHiAs9dqVePVV6znSLyD\nsmt9HaznXIaQu0O8T6pdVecG7LouClFnJwyDQ+9yjEj2sEWAdm5B4zpcOBi1GR2q\nFCnjhFE8RwMqUzbEB1Wkw5NtaugM3fluQjhZGyZW0S4AYCOZYss9pLb7G1VjC0nK\nti76KegXSfrdubyV7PLKoyT72Z2Q6l5l8Gj4R3oDcVMjFlw0rACeJZrkjQmVcGg0\n22/laFvo9ubY5tz2/oA28mA+P+IApEw6bBOVIl0CY0bxrNXBT3ZsYwExrGGDyrjD\nH06M/GhR4P83ZHGF1dOFULfDU1tnSSojOH7gibGyzQKBgQD3btgBpFq6zglzX03i\nFPE5WhK4Wwkn7PEcA7m5mQ1974aeQMKhdSfwZlMHlDO4uLv5efGGAwvzwoEIsXd6\nsgpqYpkDBLr2mZa5I8eNrK46TNjNjyEe0aqNTnW8cRwGBFK5F3sbzBpg5GNse7rO\nOXK88waOcMCY64MIBSrFba5L5QKBgQDK+J3QdvsRAKq4TjDeowRhlTe9dhAEr6Qi\nHI8jUU7LfC5CbT0KIqrpr1T6CeY7ulDn5B6BjICiJSTkyMIhgBCcKoHjljGd4frX\nHIpqk2UOXY4RgJPwvn2R9Jm7WwXGnF354linfgCWkOTCnSjRSH7bfH+xp4Jk1Aq8\nRPoZEXMXBQKBgH4U8mbry/vSj4hFsRcaGs1hs5ZTdTfuCfJ/h30mm3RnwI4Va9gA\nLejXC0oaX7yqDccTN1pVZRrCKyQ14i8YWCxbr6KVH3wXSXFv5PixXFqC3Brq6zKc\nHi9BIsdyT5hVTZ3ZdDb26x4iYvNdnRQGvAvCPr4IgGur3qoQj/noaN9tAoGAFmaj\n/Dr1cKXzMY4npJq3RBHU6gsar3m3ErC2N36kxJ56+IfX4cN7u3jHVyU6jML+ZOlv\nWHrqQ3r3/GwPyOS6cJHcbgLIjRVAuvcCa8rCr3gx0sqvCTXs4+vr/5qHI6lkUczi\nXfHxHKz3Imd39skafxzZdwD2yiwA11CBjby4SAUCgYBsyCuPSFsTRCYtzwwgcSuf\n4nxhdyqvFPa035mC1CSuB0XvCZWR2xeZaNUV5N3NOeW4KP1FE+HpOnUXNhNQWwIl\n9ozxa6qjTmi62U8ae0KX69bHCPz+38QMd0XdMDG44pawRMBcmoWBVb3ZzqgtJQ1o\nQ6FMNspekhd59ph0OGdthg==\n-----END PRIVATE KEY-----\n",
+  "client_email": "benp8282@nasdaqvaluefinder.iam.gserviceaccount.com",
+  "client_id": "107907259773269610318",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/benp8282%40nasdaqvaluefinder.iam.gserviceaccount.com"
+}
