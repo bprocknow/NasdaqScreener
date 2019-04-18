@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "nysevaluefinder",
+  "private_key_id": "d21f6481697bf0b3bd03fe3db277b70d1a1185f3",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDT253n3c1Nv05x\nsz6KG2vC7K0fp9jrAF0KopDwzqFeK7baAEqc76ZvUavNEwLV1B56l89Rb39GaBzb\nmEQc6ZM3RqfAtMfYYfpPy0RW8Q7fslx8MkVuf5q8U+OJVlQTgmLYhoIvr71fdseG\ny2zsOPkXux7QLyGlskiVpD4UZLFrYInejYdaAcX0oY9qp/6oqt8TwRcHApIjVjx5\niwCfk/XIEf6ca2CuwsCICfKx6aJip96XJL8jozDbuXEhcME6ApqZ/Rv3QRxAYyA9\n6vnCmvMf0M1In3tiOZ4hAL8esuTqyCElQeZHmXD50eVw3+n0EA+fplQukghtd5mz\nb87sUMrVAgMBAAECggEAJeL4ciawOF8l4B9156zPsKQysZ6KpDwEZ4p68RWCthyL\nLqEutrIEyZOJbbsgnqy4ZqQPZzjRQf4Maxjn1WPP9+qixUuPEZsz8GEhb4rcZhS3\nhV5YHFKlkVhPMJhHoNWIZ8BmN7Dt5MyREgH/EJ9/rEbCU+iZ08/2OwyMLYl0UQc3\nQ0BUgZtR6rjGoMIyCmJcLK8mgV08KLeP5yZ0xfxkuhXczCbKLVQyUSStpVHJX8s6\n4OVeSfDyazPjkKDKonkk+AAdQDLh4NSAu6LYf6lWKssEMyFJb2AZzHZdE7deg3NN\nQK+RD/OaP33MjTaAnODjT4fJ9whHeOuPFTG0KuDeAQKBgQDymHGuC5GWm4x8/AkS\nGzc5XE9SG5OHOBBShqtdhYDE3dWvbKHqYyhgvm9NxaFcjWN6sXip9hUFo7+FdwYv\nrA9EZc6KiOD219aeurYJjS1nDCK05oUxcnUEySqht+zE4IN/PvszX8gNdudWZYrl\nz84m018ZGGoUEeJd3PVtGScO8QKBgQDfkGJGp2MAjzGzVnz2abU1M8oeuhMBs8xH\nSkgMYB8wbIm+zdoZapF4T04h/v4I/NVekJED5LQq9AmsqL+Y/0bgZr8kNZSy3rYP\nk433qv2VbD/akHb6aeFn9zMLiDpH/rIBvzP2isCQs9fylSNvtclU9JOPsDs1gtWK\nG09dh+nCJQKBgQCtQ3GVw890iJ37OirkUqnLfwFr/CQO5FzMBEDqJ4qDkIiopOaz\nt6REDF8EZc1Mg/Lz00MB6K60+3GzSgISFEpHKIsuaHp78kXn0iRnh/xQZ9t15lpk\nqYGoLGEVZX5mUo+4VuwkkhkYfL7W9ukQH632DusRyl0g/nD1ZvWmuNsrkQKBgQDO\nf1inFjlV7O3lTn/CQ0WDTMDmvMyNh/up5azC8Y4ddkONICrRyyNu0yHCOPuAZbjX\nzgSEah0Yh6zf9EZ1FWXsJDttQKiGxzu3C33YQ/JSsFgSk9mx11bCZwyZHE1o7pKR\nFoDyupq/jb5rbOH8bxb2B6q8z/UAqkZ/eFZIeB+smQKBgCFG5vSdUQOBsJpavErE\n2jBwE2Lf6eLP9a8CoaBzEyqs2AB9pjU7Y1EQ+N1IfOgTMw7myKkSoIc9W0qA5wg3\nFJrj/XJ8Gu6VBHVxwSuRdXAl/NztbDe1hbHXfh51Qsmfgg9yhtHJgjYlSRuPfNq8\nGSfiaEfaafNRk4fVhxheGunx\n-----END PRIVATE KEY-----\n",
+  "client_email": "nysevaluefinder@nysevaluefinder.iam.gserviceaccount.com",
+  "client_id": "117273007460862085501",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/nysevaluefinder%40nysevaluefinder.iam.gserviceaccount.com"
+}

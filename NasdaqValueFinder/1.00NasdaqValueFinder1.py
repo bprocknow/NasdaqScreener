@@ -68,7 +68,7 @@ computeCashAssetsToMarketCapLastFourYears
 currentAssetsToCurrentLiabilitiesFourYears
 currentAssetsToCurrentLiabilitiesLastYears
 '''
-class MaxHeap:
+class MaxStack:
     def __init__(self, methodToSortBy):
         self.rootNode = None
         self.methodToSortBy = methodToSortBy
@@ -383,7 +383,7 @@ def getIntFromList(numYears, list):
 
 '''
 Uses getIntFromList ^^^ Returns the int value from the balance sheet
-Used for maxHeap
+Used for MaxStack
 Finds the value of the balance sheet over the specified time frame
 If the balance sheet or market cap are not available, return -1
 '''
@@ -551,13 +551,13 @@ def printMinHeapCalculateValues(excelSpreadsheetName, numberOfRowsCompared):
     nasdaqSheet = nasdaqExcel.sheet_by_index(0)
     #Second row of Excel = index 1
     i=1
-    BVMC4Y = MaxHeap('computeBookValueToMarketCapLastFourYears')
-    BVMC1Y = MaxHeap('computeBookValueToMarketCapLastYear')
-    CAMC4Y = MaxHeap('computeCurrentAssetsToMarketCapLastFourYears')
-    CAMC1Y = MaxHeap('computeCurrentAssetsToMarketCapLastFourYears')
-    CEMC4Y = MaxHeap('computeCashAssetsToMarketCapLastFourYears')
-    CAL4Y = MaxHeap('currentAssetsToCurrentLiabilitiesFourYears')
-    CAL1Y = MaxHeap('currentAssetsToCurrentLiabilitiesLastYear')
+    BVMC4Y = MaxStack('computeBookValueToMarketCapLastFourYears')
+    BVMC1Y = MaxStack('computeBookValueToMarketCapLastYear')
+    CAMC4Y = MaxStack('computeCurrentAssetsToMarketCapLastFourYears')
+    CAMC1Y = MaxStack('computeCurrentAssetsToMarketCapLastFourYears')
+    CEMC4Y = MaxStack('computeCashAssetsToMarketCapLastFourYears')
+    CAL4Y = MaxStack('currentAssetsToCurrentLiabilitiesFourYears')
+    CAL1Y = MaxStack('currentAssetsToCurrentLiabilitiesLastYear')
     clickOnCookieBox(browser)
     while (i<numberOfRowsCompared+1):
         ticker = nasdaqSheet.row_values(i)[0]

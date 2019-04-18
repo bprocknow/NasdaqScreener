@@ -8,6 +8,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.common.keys import Keys
 #For reading Google Sheets
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
@@ -23,13 +24,31 @@ import heapq
 '''
 Overview:
 This is a stock screener
+
+It is connected to the google project called NasdaqValueFinder
+
 Takes input from an excel that was downloaded from www.nasdaq.com and it contains all of the stocks on the nasdaq.
-The input is the ticker and the market cap of the stock.  The balance sheet is found from the ticker, and all
-of the values that are used as part of the screener are calculated as a function of the market cap and balance sheet.
-There are nodes that store the tickers, market cap, balance sheet, and all of the computed values.
+The input is the ticker and the market cap of the stock.  The balance sheet is found from the ticker from
+www.rocketfinancial.com, and all of the values that are used as part of the screener are calculated as a function
+of the market cap and balance sheet.  There are nodes that store the tickers, market cap, balance sheet, and all
+of the computed values.
 The nodes are written to an excel after the balance sheet and computed values are found.
-After the new excel is created with the necessary information, it can be maximized and printed out, or used in
-any other way (AI??? ;))
+
+WAYS TO IMPROVE:
+Find if the company is in a bubble.  Find the growth of debt over the life of the company compared to
+its earnings.  Also could be found by growth of earnings vs market cap.
+
+Find a way to take all the computed values and spit out less numbers, but each number is more important.  Maybe I
+only want companies that have current assets to current liabilities over 2.5 and a good book value etc.  Could use machine
+learning???
+
+Version 1.03?  Include Income Statement for each company and find the ROA, ROI, Return on fixed assets, depreciation costs
+relative to assets, follow Security Analysis.  Includes Cash Flow Statement!
+
+
+Version 2.00?  Saves all the balance sheets for each company in an array or something in the google sheet for the last decade+
+and finds how the debt of all industrials/health companies/financials/ etc have been growing relative to earnings.
+"BubbleFinder.py".  Is based off of the Pricipals of Navigating Debt Crisises.  Mostly macro
 '''
 
 '''
@@ -38,13 +57,6 @@ Problems:
 
 '''
 Node object holds the ticker, marketCap, balanceSheetList.
-BVMC4Y = Book value to market cap last four years
-BVMC1Y = Book value to market cap last year
-CAMC4Y = Current Assets to Market Cap last four years
-CAMC1Y = Current Assets to Market Cap last year
-CEMC4Y = Cash and Cash Equivalent to Market Cap last four years
-CACL4Y = Current Assets to Current Liabilities last four years
-CACL1Y = Current Assets to Current Liabilities last year
 '''
 class Node:
     def __init__(self, browser, ticker, marketCap):
@@ -81,9 +93,13 @@ class Node:
 
 #Returns the market cap in an int from the inputted string
 def findMarketCap(marketCap):
+    #Returns the market caps that are below one million dollars
     try:
-        #Returns the market caps that are below one million dollars
-        return int(marketCap)
+        outputMC = ""
+        for i in marketCap[1:]:
+            if i!=",":
+                outputMC+=i
+        return int(outputMC)
     except ValueError:
         pass
     if marketCap[0] is "n":
@@ -114,137 +130,184 @@ def findMarketCap(marketCap):
     except ValueError:
         print("fuckedMarketCapException")
         return None
+    if indexOfPeriod==0:
+        return marketCap*multiplierFactor
     return marketCap*multiplierFactor/(10**(len(marketCapStr)-indexOfPeriod))
 
-#Opens the nasdaq website and clicks on the cookie box so that the rest of the program isn't fucked.
-def clickOnCookieBox(browser):
-    browser.get("http://www.nasdaq.com")
-    cookieClickLocation = ("//div[@id='cookieConsent']/a[@id='cookieConsentOK']")
-    timeout = 15
-    openedPage = True
-    while(openedPage):
-        try:
-            WebDriverWait(browser, timeout).until(EC.visibility_of_element_located((By.XPATH, cookieClickLocation)))
-            openedPage=False
-        except TimeoutException:
-            print("cookieClickerTimeoutException")
-            pass
-    #Click on accept cookies
-    cookieClickLink = browser.find_element_by_xpath(cookieClickLocation)
-    cookieClickLink.click()
+def clickOnNoThanks(browser):
+    pass
 
 '''
-Returns the balance sheet of the ticker from nasdaq.com
+Opens the nasdaq website and clicks on the cookie box so that the rest of the program isn't fucked.
+
+URL: https://www.sec.gov/search/search.htm
+'''
+def openSecTickerAllYearsBalanceSheet(browser, ticker):
+    URL = "https://www.sec.gov/search/search.htm"
+    browser.get(URL)
+    timeout = 5
+    loadedPage = False
+    makeSurePageIsOpened(browser, '//*[@id="cik"]', timeout, "Location of the text box was not found")
+    searchBox = browser.find_element_by_xpath('//*[@id="cik"]')
+    searchBox.send_keys(ticker)
+    searchBox.send_keys(Keys.RETURN)
+    #See if there is no matching ticker symbol
+    try:
+        #Location of the first interactive data button
+        WebDriverWait(browser, timeout).until(EC.visibility_of_element_located((By.XPATH, '/html/body/div/center/h1')))
+    #There is data on this ticker
+    except Exception:
+        pass
+    return True
+
+'''
+Goes row by row through the first page with all of the filings for the current company
+and finds the first row that contains a Interactive Data button.
+Returns the type of filing that is in that row
+'''
+def getFileType(browser):
+    timeout = 2
+    makeSurePageIsOpened(browser, '//*[@id="count"]/option[5]', timeout, "Location of the limit results per page not found.")
+    #Make the results per page 100
+    limitResultsPerPageElement = browser.find_element_by_xpath('//*[@id="count"]/option[5]')
+    limitResultsPerPageElement.click()
+    currentRow = 0
+    while(currentRow<100):
+        try:
+            #This is the element for the interactive button
+            browser.find_element_by_xpath('//*[@id="seriesDiv"]/table/tbody/tr['+str(currentRow)+']/td[2]/a[2]')
+            filingType = browser.find_element_by_xpath('//*[@id="seriesDiv"]/table/tbody/tr['+str(currentRow)+']/td[1]')
+            return filingType.text
+        #The current row doesn't contain an interactive data button
+        except Exception:
+            currentRow+=1
+    #There were no interactive links in the first page, return None
+    return None
+
+'''
+Helper method for getBalanceSheet
+Make sure the page is fully opened
+'''
+def makeSurePageIsOpened(browser, element, timeout, exceptionMessage):
+    while(True):
+        try:
+            #Location of the first interactive data button
+            WebDriverWait(browser, timeout).until(EC.visibility_of_element_located((By.XPATH, element)))
+            break
+        except TimeoutException:
+            print("Make sure page is opened timeout Exception")
+            pass
+        except Exception:
+            print(exceptionMessage)
+            #return None
+
+def getFilingDateYear(browser, currentRow):
+    filingYearElement = browser.find_element_by_xpath('//*[@id="seriesDiv"]/table/tbody/tr['+str(currentRow)+']/td[4]')
+    return filingYearElement.text[:4]
+
+'''
+Returns the balance sheet of the ticker from www.sec.gov
 Wait for the balance sheet numbers to be visible.
 If the ticker is not available or doesn't have any information on the website,
 return None
 '''
 def getBalanceSheet(browser, ticker):
-    URL = "https://www.nasdaq.com/symbol/"+ ticker+ '/financials?query=balance-sheet/'
-    browser.get(URL)
-    #Wait until the top of the Annual Income Statement is loaded.  The rest of the page is hopefully loaded by then. :)
-    timeout = 5
-    try:
-        WebDriverWait(browser, timeout).until(EC.visibility_of_element_located((By.XPATH, '//*[@id="financials-iframe-wrap"]/div[1]/h3')))
-    except TimeoutException:
-        print ("Timeout error 0")
-        #There is an instance of nasdaq's website having nothing on the screen except a warning sign.
-        try:
-            nasdaqRuntimeError = browser.find_element_by_xpath('/html/body/span/h2/i')
-            if (nasdaqRuntimeError.text == "Runtime Error"):
-                print("nasdaqRuntimeException")
-                return None
-        except Exception:
-            pass
-    #Test if there is any data for this symbol
-    try:
-        #Location of element that checks if there is any information on the nasdaq website about the ticker.
-        noDataAvailableElement = browser.find_element_by_xpath('//*[@id="quotes_content_left_nodatatext"]/span/b')
-        if (noDataAvailableElement.text == "There is currently no data for this symbol."):
-            return None
-    except Exception:
-        pass
-    try:
-        #Location of element that checks if there is any information on the nasdaq website about the ticker.
-        #Sometimes there is the element above, but sometimes it is this element.  IDK...
-        noDataAvailableElement = browser.find_element_by_xpath('//*[@id="left-column-div"]/div[1]')
-        if (len(noDataAvailableElement.text)>3):
-            return None
-        #Element was found, that means there is no data for the ticker.
-    except Exception:
-        #Element was not found
-        pass
-    try:
-        #Tests the current URL, if the page doesn't have the Cash and Cash Equivalents
-        #Text, it is not on the right page.  Search for the link to the balance sheet and click
-        testingCorrectElement = browser.find_element_by_xpath("//div[@class='genTable']/table/tbody/tr[2]/th")
-        if (testingCorrectElement.text != "Cash and Cash Equivalents"):
-            balanceSheetLink = browser.find_element_by_xpath('//*[@id="tab2"]/span')
-            balanceSheetLink.click()
-    #Sometimes the noDataAvailableElement (^^^) doesn't work, and it passes to this point.  Try again
-    except NoSuchElementException:
-        time.sleep(2)
-        return getBalanceSheet(browser, ticker)
-    #Sometimes the page loads to quickly and the element hasn't loaded yet.  Wait 1 sec and try again so it loaded
-    except Exception:
-        time.sleep(2)
-        testingCorrectElement = browser.find_element_by_xpath("//div[@class='genTable']/table/tbody/tr[2]/th")
-        if (testingCorrectElement.text != "Cash and Cash Equivalents"):
-            balanceSheetLink = browser.find_element_by_xpath('//*[@id="tab2"]/span')
-            balanceSheetLink.click()
-    #Wait for the balance sheet to load.
-    try:
-        timeout = 5
-        #Location of last element on the balance sheet
-        WebDriverWait(browser, timeout).until(EC.visibility_of_element_located((By.XPATH, '//*[@id="financials-iframe-wrap"]/div[1]/table/tbody/tr[34]/td[2]')))
-    except TimeoutException:
-        print ("Timeout error 1")
-        time.sleep(5)
-        return getBalanceSheet(browser, ticker)
-    #Contains the int of all asset prices
-    BalanceSheet=[]
-    row=2
-    while(row<35):
-        if (row == 8):
-            pass
-        elif (row == 16):
-            pass
-        elif (row == 27):
-            pass
+    #Open the website and get the browser to the page where all of the filings are.
+    if openSecTickerAllYearsBalanceSheet(browser, ticker) is False:
+        return None
+    #Find the type of filing that the current ticker files under.
+    fileType = getFileType(browser)
+    if fileType is None:
+        return None
+    #Enter in the fileType to the Filing Type text box.
+    filingTypeBoxElement = browser.find_element_by_xpath('//*[@id="type"]')
+    filingTypeBoxElement.send_keys(str(fileType))
+    filingTypeBoxElement.send_keys(Keys.RETURN)
+    #Loop through all of the interactive data links and get the balance sheet from each
+    currentWhiteRow = 2
+    currentBlueRow = 1
+    boolWhiteRow = True
+    #This dictionary will contain all of the balance sheet infomation for the current ticker
+    balanceSheetDictionary ={}
+    timeout=2
+    while(True):
+        #Click on the current row interactive data button
+        #The white and blue rows switch off
+        if (boolWhiteRow):
+            #Wait for new page to load
+            makeSurePageIsOpened(browser, '//*[@id="seriesDiv"]/table/tbody/tr['+str(currentWhiteRow)+']/td[2]/a[2]' , timeout, "Interactive Data Link is broken for "+ticker)
+            try:
+                interactiveDataElement = browser.find_element_by_xpath('//*[@id="seriesDiv"]/table/tbody/tr['+str(currentWhiteRow)+']/td[2]/a[2]')
+                #There is a delay between this element being found and being able to be clicked on.
+                while(True):
+                    try:
+                        balanceSheetDictionary[str(getFilingDateYear(browser, currentWhiteRow))] = {}
+                        interactiveDataElement.click()
+                        currentWhiteRow+=2
+                        boolWhiteRow = False
+                        break
+                    except Exception:
+                        interactiveDataElement = browser.find_element_by_xpath('//*[@id="seriesDiv"]/table/tbody/tr['+str(currentWhiteRow)+']/td[2]/a[2]')
+                        print("Interactive Balance Sheet Exception, WR")
+                        time.sleep(0.05)
+                        pass
+            #There are no more interactive data links
+            except Exception:
+                print("No more interactive data links Exception")
+                break
+        #Blue row
         else:
-            index = 2
-            #tmpList adds all the assets in each row, then is added to the Balance sheet list.
-            tmpList=[]
-            while(index<6):
-                #HTMLObject is the type pulled from the HTML website.  Needs to be turned into an int
-                try:
-                    location = "//div[@class='genTable']/table/tbody/tr["+str(row)+"]/td["+str(index)+"]"
-                    HTMLObject=browser.find_elements_by_xpath(location)
-                    #Int of asset price
-                    AssetInt = [x.text for x in HTMLObject]
-                    tmpList.append(AssetInt[0])
-                    index = index+1
-                #Try this thing again, the website was loaded too quickly and elements were missed
-                except IndexError:
-                    print("indexError")
-                    return getBalanceSheet(browser, ticker)
-                #Sometime the websites get mad for sending too many requests too fast, take a break try again
-                except Exception:
-                    print("elementNotFoundException")
-                    time.sleep(3)
-                    location = "//div[@class='genTable']/table/tbody/tr["+str(row)+"]/td["+str(index)+"]"
-                    HTMLObject=browser.find_elements_by_xpath(location)
-                    #Int of asset price
-                    AssetInt = [x.text for x in HTMLObject]
-                    tmpList.append(AssetInt[0])
-                    index = index+1
-            BalanceSheet.append(tmpList)
-        row = row+1
+            makeSurePageIsOpened(browser, '//*[@id="seriesDiv"]/table/tbody/tr['+str(currentBlueRow)+']/td[2]/a[2]', timeout, "Location of the interactive data button for the blue row didn't load for "+ticker)
+            try:
+                interactiveDataElement = browser.find_element_by_xpath('//*[@id="seriesDiv"]/table/tbody/tr['+str(currentBlueRow)+']/td[2]/a[2]')
+                boolWhiteRow = True
+                currentBlueRow+=1
+                #There is a delay between this element being found and being able to be clicked on.
+                while(True):
+                    try:
+                        balanceSheetDictionary[getFilingDateYear(browser, currentBlueRow)] = {}
+                        interactiveDataElement.click()
+                        break
+                    except Exception:
+                        interactiveDataElement = browser.find_element_by_xpath('//*[@id="seriesDiv"]/table/tbody/tr['+str(currentBlueRow)+']/td[2]/a[2]')
+                        print("Interactive Balance Sheet Exception, BR")
+                        time.sleep(0.05)
+                        pass
+            #There are no more interactive data links
+            except Exception:
+                print("No mroe interactive data links Exception")
+                break
+        makeSurePageIsOpened(browser, '//*[@id="menu_cat2"]', timeout, "Finincial Statements Button didn't load")
+        financialStatementsElement = browser.find_element_by_xpath('//*[@id="menu_cat2"]')
+        financialStatementsElement.click()
+        makeSurePageIsOpened(browser, '//*[@id="r2"]/a', timeout, "There are no selections for the balance sheet for "+ticker)
+        #Finding the Consolidated Balance Sheets button
+        currentRowFinancial = 2
+        while(True):
+            try:
+                balanceSheetElement = browser.find_element_by_xpath('//*[@id="r'+str(currentRowFinancial)+'"]/a')
+            #There is no consolidated balance sheet for this ticker, try the next block
+            except Exception:
+                print("Consolidated balance sheet element not found for "+ticker)
+                break
+            if balanceSheetElement.text == "CONSOLIDATED BALANCE SHEETS" or balanceSheetElement.text == "Consolidated Balance Sheets":
+                balanceSheetElement.click()
+                getConsolidatedBalanceSheet(browser, balanceSheetDictionary)
+                break
+            elif balanceSheetElement.text == "OTHER BALANCE SHEET NAMES":
+                balanceSheetElement.click()
+                getOTHERBALANCESHEET(browser, balanceSheetDictionary)
+            else:
+                currentRowFinancial+=1
+        #Try to find the other types of balance sheets - see General Electric
 
-    return BalanceSheet
+    return balanceSheetDictionary
 
+'''
+Helper method for computeXXXXLastYear
 #Take list and find the numbers in each index.  Put the numbers in the index in a string
 #and sum the string with the numbers of the other strings.  Return the total value
+'''
 def getIntFromList(numYears, list):
     sumOfList=0
     i=0
@@ -450,34 +513,40 @@ Acts as a main method.  Launches all helper methods to return a list
 of Nodes.
 Inputs excel sheet with ticker in zero row and market cap in third row
 This sheet must be on sheet index 0
+Goes through every row in the excel sheet
 Inputs number of rows that should be scanned on the excel.  Input of 'all'
 means that all the rows should be checked
 Returns a list of the balance sheets of all the tickers
 '''
-def writeToExcelCalculateValues(excelSpreadsheetName, numberOfRowsCompared, googleSheetName):
+def writeToExcelCalculateValues(excelSpreadsheetName, googleSheetName):
     #Operator of the browser
     browser = configureBrowser()
     #Opens the excel that contains the market cap and the ticker
     nasdaqExcel = xlrd.open_workbook(excelSpreadsheetName)
     nasdaqSheet = nasdaqExcel.sheet_by_index(0)
+    #Find the number of rows in the EXCEL
+    numberOfRowsCompared = nasdaqSheet.nrows
     #Operator of the google sheet that is used to push all of the calculated values
     sheet = openGoogleSpreadSheet(googleSheetName)
     #Finds the row that the program left off on after it was discontinued
     rowOfGoogle = findRowOfGoogle(sheet)
     rowOfExcel = rowOfGoogle-1
-    #Open the browser and click on the box that asks if it is ok to use cookies
-    clickOnCookieBox(browser)
+    #SOMETIMES THERE IS A POPUP THAT APPEARS, NOT DONE YET BUT IF IT IS A PROPLEM TAKE CARE OF IT HERE
+    clickOnNoThanks(browser)
     #Loop through the rows of the excel sheet and the google Sheet
-    while (rowOfExcel<numberOfRowsCompared+1):
+    while (rowOfExcel<numberOfRowsCompared):
         #Used if the google api says that the program is writing to the google sheet too quickly.
         rowOfGoogleBackup = rowOfGoogle
         ticker = str(nasdaqSheet.row_values(rowOfExcel)[0])
         marketCap = nasdaqSheet.row_values(rowOfExcel)[3]
+        sector = nasdaqSheet.row_values(rowOfExcel)[5]
+        name = nasdaqSheet.row_values(rowOfExcel)[1]
         #Restart the browser if getBalanceSheet threw an exception.  The program usually throws Timeout
         #Exceptions from retrieving the webpage, but sometimes google API kicks me out for writing over
         #500 cells/100 seconds, that's why there is the time.sleep
         createdNode = False
         while(createdNode is False):
+            newNode = Node(browser,ticker,marketCap)
             try:
                 newNode = Node(browser, ticker, marketCap)
                 createdNode = True
@@ -486,26 +555,35 @@ def writeToExcelCalculateValues(excelSpreadsheetName, numberOfRowsCompared, goog
                 browser.quit()
                 time.sleep(10)
                 browser = configureBrowser()
-                clickOnCookieBox(browser)
         try:
             if (newNode.getBalanceSheet() is None or newNode.getMarketCap() is None):
-                sheet.update_cell(rowOfGoogle,1," ")
-                rowOfExcel+=1
-                rowOfGoogle+=1
-            else:
-                    sheet.update_cell(rowOfGoogle,1,str(ticker))
-                    sheet.update_cell(rowOfGoogle,2,str(newNode.getMarketCap()))
-                    sheet.update_cell(rowOfGoogle,3, str(newNode.getBVMC4Y()))
-                    sheet.update_cell(rowOfGoogle,4,str(newNode.getBVMC1Y()))
-                    sheet.update_cell(rowOfGoogle,5,str(newNode.getCAMC4Y()))
-                    sheet.update_cell(rowOfGoogle,6,str(newNode.getCAMC1Y()))
-                    sheet.update_cell(rowOfGoogle,7,str(newNode.getCEMC4Y()))
-                    sheet.update_cell(rowOfGoogle,8,str(newNode.getCACL4Y()))
-                    sheet.update_cell(rowOfGoogle,9,str(newNode.getCACL1Y()))
+                    #sheet.update_cell(rowOfGoogle,1,"")
                     rowOfExcel+=1
                     rowOfGoogle+=1
-                    #Used to find where the program left off when an exception is thrown
-                    sheet.update_cell(rowOfGoogle,1,"ENDED HERE")
+                    #sheet.update_cell(rowOfGoogle,1,"ENDED HERE")
+            else:
+                sheet.update_cell(rowOfGoogle,2,str(newNode.getMarketCap()))
+                sheet.update_cell(rowOfGoogle,3,str(sector))
+                sheet.update_cell(rowOfGoogle,4,str(name))
+                sheet.update_cell(rowOfGoogle,5, str(newNode.getBVMC4Y()))
+                sheet.update_cell(rowOfGoogle,6,str(newNode.getBVMC1Y()))
+                sheet.update_cell(rowOfGoogle,7,str(newNode.getCAMC4Y()))
+                sheet.update_cell(rowOfGoogle,8,str(newNode.getCAMC1Y()))
+                sheet.update_cell(rowOfGoogle,9,str(newNode.getCEMC4Y()))
+                sheet.update_cell(rowOfGoogle,10,str(newNode.getCACL4Y()))
+                sheet.update_cell(rowOfGoogle,11,str(newNode.getCACL1Y()))
+                #Used to find where the program left off when an exception is thrown
+                sheet.update_cell(rowOfGoogle+1,1,"ENDED HERE")
+                sheet.update_cell(rowOfGoogle,1,str(ticker))
+                rowOfExcel+=1
+                rowOfGoogle+=1
+        #Sometimes an exception is thrown that requires the program to be restarted.
+        except gspread.exceptions.APIError:
+            print("Unauthenticated Exception")
+            browser.quit()
+            time.sleep(10)
+            browser = configureBrowser()
+            clickOnCookieBox(browser)
         #Once 500 cells are written, google will stop letting the program add more
         #information to the google sheet.  Take a break and start over.
         except Exception:
@@ -535,16 +613,14 @@ def writeToExcelCalculateValues(excelSpreadsheetName, numberOfRowsCompared, goog
 def main():
     #Name of the excel with ticker of stocks in row 0 & market Cap in row 3
     #MUST BE A .XLS FILE!!!
-    excelName = "./All_stocks_Excel/March24_2019Nasdaq.xls"
+    excelName = "./All_stocks_Excel/March27_2019Nasdaq.xls"
     #Name of google sheet
-    googleSheetName = "NasdaqValueFinder"
+    googleSheetName = "NasdaqValueFinderMar29"
     '''
     NOTE: THE INDEX OF THE EXCEL STARTS AT 0, AND THE INDEX OF THE GOOGLE SHEET STARTS AT 1
     '''
-    #COUNT FOR HOW MANY ROWS YOU WANT TO CHECK HERE.
-    numberOfRowsCompared=3462
 
-    writeToExcelCalculateValues(excelName, numberOfRowsCompared, googleSheetName)
+    writeToExcelCalculateValues(excelName, googleSheetName)
 
 if __name__ == "__main__":
     main()
